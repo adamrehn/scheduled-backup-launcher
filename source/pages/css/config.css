@@ -1,0 +1,91 @@
+body {
+	background-color: #f0f0f0;
+}
+
+#outerWrapper, #buttons
+{
+	box-sizing: border-box;
+	padding: 1em;
+}
+
+#outerWrapper {
+	overflow-y: auto;
+}
+
+h1
+{
+	margin:        0;
+	margin-bottom: 1.5em;
+	font-weight:   600;
+	font-size:     1.2em;
+}
+
+button + h1 {
+	margin-top: 3em;
+}
+
+p
+{
+	margin-bottom: 1.5em;
+	line-height: 1.75em;
+}
+
+table
+{
+	border-collapse: collapse;
+	margin-top: 1.75em;
+	width: 100%;
+}
+
+th {
+	padding-right: 0.5em;
+}
+
+td
+{
+	padding-top:    0.5em;
+	padding-bottom: 0.5em;
+	padding-right:  0.5em;
+}
+
+td > input, td > select, td > button
+{
+	box-sizing: border-box;
+	display:    block;
+	width:      100%;
+	min-width:  100%;
+}
+
+input[type=text] {
+	padding: 0.5em;
+}
+
+th {
+	text-align: left;
+}
+
+table + button {
+	margin-top: 0.5em;
+}
+
+#buttons
+{
+	border-top: 1px solid #ccc;
+	background-color: #f0f0f0;
+	text-align: right;
+	position: fixed;
+	width: 100%;
+	bottom: 0;
+	right: 0;
+}
+
+#buttons button {
+	margin-left: 0.5em;
+}
+
+#clear
+{
+	clear:  both;
+	width:  0;
+	height: 0;
+}

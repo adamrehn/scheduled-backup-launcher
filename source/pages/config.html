@@ -1,0 +1,209 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Configuration</title>
+		
+		<link rel="stylesheet" type="text/css" href="./css/common.css">
+		<link rel="stylesheet" type="text/css" href="./css/config.css">
+		
+		<style type="text/css">
+			#schedule, #about {
+				float: left;
+			}
+		</style>
+		
+		<script type="text/javascript" src="../FormBuilder.js"></script>
+		<script type="text/javascript">
+			
+			var remote = require('remote');
+			var BrowserWindow = remote.require('browser-window');
+			var $ = require('jquery');
+			var ipc = require('ipc');
+			var ipcTargetButton = null;
+			
+			//Creates a child browser window, for displaying in place of this one
+			function createChildWindow()
+			{
+				return new BrowserWindow({
+					'width':      620,
+					'height':     1,
+					'show':       false,
+					'fullscreen': false,
+					'resizable':  false
+				});
+			}
+			
+			//Resizes the scrollable area of the window
+			function resizeScrollableArea() {
+				$('#outerWrapper').css('height', (window.browserWindow.getContentSize()[1] - $('#buttons').outerHeight()) + 'px');
+			}
+			
+			$(document).ready(function()
+			{
+				//Grab a reference to the current browser window
+				window.browserWindow = remote.getCurrentWindow();
+				window.browserWindow.webContents.once('did-finish-load', resizeScrollableArea);
+				
+				//Register our IPC event handler
+				ipc.on('update-items', function(arg)
+				{
+					//If a target button has been specified, set its value
+					if (ipcTargetButton !== null) {
+						$(ipcTargetButton).val(JSON.stringify(arg));
+					}
+				});
+				
+				//Wire up the event listeners for the static buttons
+				$('#cancel').click(function(){ ipc.send('close-config', ''); });
+				$('#save').click(function()
+				{
+					ipc.send('save-config', {
+						'tools':  window.toolsForm.getValues(),
+						'rounds': window.roundsForm.getValues()
+					});
+				});
+				$('#schedule').click(function()
+				{
+					//Hide the current browser window
+					browserWindow.hide();
+					
+					//Create a new browser window to display the schedule editor
+					var scheduleWindow = createChildWindow();
+					scheduleWindow.loadUrl('file://' + __dirname + '/schedule.html');
+					scheduleWindow.on('closed', function()
+					{
+						scheduleWindow = null;
+						browserWindow.show();
+					});
+					
+					//Perform setup in the schedule editor window
+					scheduleWindow.webContents.on('did-stop-loading', function()
+					{
+						scheduleWindow.webContents.send('perform-setup', {
+							'rounds':  window.roundsForm.getValues()
+						});
+					});
+				});
+				$('#about').click(function()
+				{
+					var aboutWindow = new BrowserWindow({
+						'width':      700,
+						'height':     500,
+						'show':       false,
+						'fullscreen': false,
+						'resizable':  true,
+						'title':      'About'
+					});
+					
+					aboutWindow.loadUrl('file://' + __dirname + '/about.html');
+					aboutWindow.center();
+					aboutWindow.show();
+				});
+				
+				//Retrieve the current config data
+				var config = ipc.sendSync('get-config', '');
+				
+				//Reformat the rounds into the correct form
+		        config.rounds.forEach(function(round) {
+		            round.items = JSON.stringify(round.items);
+		        });
+				
+				//Build the tools form table
+				window.toolsForm = FormBuilder.build($('#tools'), {
+					'name':        {'type':'text', 'label':'Name'},
+					'command':     {'type':'text', 'label':'Command'},
+					'defaultArgs': {'type':'text', 'label':'Default Arguments'}
+				},
+				Object.keys(config.tools).map(function(tool)
+				{
+					return {
+						'name':        tool,
+						'command':     config.tools[tool]['command'],
+						'defaultArgs': config.tools[tool]['defaultArgs']
+					};
+				}));
+				
+				//Build the rounds form table
+				window.roundsForm = FormBuilder.build($('#rounds'), {
+					'name':        {'type':'text', 'label':'Name'},
+					'description': {'type':'text', 'label':'Description'},
+					'items':       {
+						'type':         'button',
+						'label':        'Items',
+						'buttonLabel':  'Edit Items',
+						'buttonHandler': function(button)
+						{
+							//Hide the current browser window
+							browserWindow.hide();
+							
+							//Set the IPC target button
+							ipcTargetButton = button;
+							
+							//Create a new browser window to display the item editor
+							var itemWindow = createChildWindow();
+							itemWindow.loadUrl('file://' + __dirname + '/editItems.html');
+							itemWindow.on('closed', function()
+							{
+								itemWindow = null;
+								browserWindow.show();
+							});
+							
+							//Perform setup in the item editor window
+							itemWindow.webContents.on('did-stop-loading', function()
+							{
+								var buttonVal = $(button).val();
+								itemWindow.webContents.send('perform-setup', {
+									'id':     browserWindow.id,
+									'tools':  window.toolsForm.getValues(),
+									'items':  (buttonVal.length > 0) ? JSON.parse(buttonVal) : [],
+									'config': config
+								});
+							});
+						}
+					}
+				}, config.rounds);
+				
+				//Under Linux, resizing only appears to work correctly after the window is visible
+				if (process.platform == 'linux') {
+					browserWindow.show();
+				}
+				
+				//Resize the window contents and make it visible
+				window.browserWindow.setContentSize(620, 600);
+				resizeScrollableArea();
+				browserWindow.center();
+				browserWindow.show();
+				
+				//Under Linux, some versions of Electron intermittently fail to resize the first time
+				if (process.platform == 'linux') {
+					setTimeout(function(){ resizeScrollableArea(); }, 1000);
+				}
+			});
+			
+		</script>
+	</head>
+	<body>
+		
+		<div id="outerWrapper">
+			<h1>External Tools</h1>
+			
+			<p>These are the tools that will be invoked to actually perform backup actions. In addition to the tools specified here, custom commands are also supported for individual backup items.</p>
+			
+			<table id="tools"></table>
+			
+			<h1>Backup Rounds</h1>
+			
+			<p>Backup items are grouped together into rounds. To edit the list of backup items for a given round, click the <em>Edit Items</em> button for that round.</p>
+			
+			<table id="rounds"></table>
+		</div>
+		
+		<div id="buttons">
+			<button id="schedule">Schedule Rounds</button>
+			<button id="about">About</button>
+			<button id="save">Save</button>
+			<button id="cancel">Cancel</button>
+		</div>
+		
+	</body>
+</html>

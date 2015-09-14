@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Schedule Rounds</title>
+		
+		<link rel="stylesheet" type="text/css" href="./css/common.css">
+		<link rel="stylesheet" type="text/css" href="./css/config.css">
+		<style type="text/css">
+			
+			p {
+				color: #444;
+			}
+			
+			#scheduleContainer p
+			{
+				text-align: center;
+				color: #000;
+			}
+			
+			code
+			{
+				font-size: 1.2em;
+				
+				-webkit-user-select: text;
+				user-select:         text;
+				cursor:              text;
+			}
+			
+			input[type="time"] {
+				font-family: inherit;
+			}
+			
+			#scheduleContainer {
+				margin-top: 2.5em;
+			}
+			
+			tr.None  > td:not([fieldname="type"]) > *,
+			tr.Login > td:not([fieldname="type"]) > * {
+				display: none;
+			}
+			
+			tr.Daily > td[fieldname="day"] > * {
+				display: none;
+			}
+			
+		</style>
+		
+		<script type="text/javascript" src="../FormBuilder.js"></script>
+		<script type="text/javascript">
+			
+			var Utility = require('../Utility.js');
+			var TaskSchedulerFactory = require('../TaskSchedulerFactory.js');
+			var remote = require('remote');
+			var BrowserWindow = remote.require('browser-window');
+			var $ = require('jquery');
+			var ipc = require('ipc');
+			
+			ipc.on('perform-setup', function(args) {
+				performSetup(args.rounds);
+			});
+			
+			//Resizes the scrollable area of the window
+			function resizeScrollableArea() {
+				$('#outerWrapper').css('height', (window.browserWindow.getContentSize()[1] - $('#buttons').outerHeight()) + 'px');
+			}
+			
+			function performSetup(rounds)
+			{
+				//Grab a reference to the current browser window
+				window.browserWindow = remote.getCurrentWindow();
+				
+				//Wire up the event listeners for the static buttons
+				$('#cancel').click(function(){ browserWindow.close(); });
+				$('#save').click(function()
+				{
+					//Prevent the save button from being clicked more than once
+					$('#save').text('Saving...');
+					$('#save').attr('disabled', 'disabled');
+					
+					//Retrieve the form values and create the new schedule data
+					var newSchedule = {};
+					var formValues  = window.itemsForm.getValues();
+					formValues.forEach(function(row, index)
+					{
+						if (row.type != 'None')
+						{
+							var timeComponents = row.time.split(':');
+							newSchedule[index] = {
+								'type':   row.type.toLowerCase(),
+								'hour':   parseInt(timeComponents[0]),
+								'minute': parseInt(timeComponents[1]),
+								'day':    ((row.type != 'Daily') ? row.day : null)
+							};
+						}
+					});
+					
+					//Apply the new schedule
+					scheduler.schedule(newSchedule);
+				});
+				
+				//Instantiate the task scheduler for the current platform
+				window.scheduler = TaskSchedulerFactory.createScheduler(rounds.length, function(scheduler)
+				{
+					//Set our event handlers
+					scheduler.saved(function() { browserWindow.close(); });
+					scheduler.error(function(err)
+					{
+						alert('Interfacing with the underlying system scheduling system failed.\n\nError details:\n' + JSON.stringify(err, true, 1));
+						browserWindow.close();
+					});
+					
+					//Retrieve the existing scheduling details
+					scheduler.getScheduledRounds(function(existingSchedule)
+					{
+						//Generate the default form values from the scheduling data
+						var roundValues = [];
+						for (var currRound = 0; currRound < rounds.length; ++currRound)
+						{
+							var values = {'round': '#' + currRound + ': ' + rounds[currRound].name};
+							if (existingSchedule[currRound] !== undefined)
+							{
+								var schedule = existingSchedule[currRound];
+								values['type'] = schedule.type.substr(0,1).toUpperCase() + schedule.type.substr(1);
+								
+								if (schedule.type != 'login') {
+									values['time'] = Utility.padToDigits(schedule.hour, 2) + ':' + Utility.padToDigits(schedule.minute, 2);
+								}
+								
+								if (schedule.day !== null) {
+									values['day'] = schedule.day;
+								}
+							}
+							else {
+								values['type'] = 'None';
+							}
+							
+							roundValues.push(values);
+						}
+						
+						//The handler for when a round's backup type is changed
+						var typeChangeHandler = function() {
+							$(this).parent().parent().attr('class', $(this).val());
+						};
+						
+						//Build the schedule form table
+						$('#scheduleContainer').empty();
+						$('#scheduleContainer').append($(document.createElement('table')).attr('id', 'schedule'));
+						window.itemsForm = FormBuilder.build($('#schedule'), {
+							'round': {'type':'static', 'label':'Round'},
+							'type':  {'type':'select', 'label':'Schedule', 'options':['None', 'Login', 'Daily', 'Weekly'], 'change':typeChangeHandler},
+							'time':  {'type':'time',   'label':'Time'},
+							'day':   {'type':'select', 'label':'Day', 'options':['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']}
+						}, roundValues, {'addButton':false, 'remButton':false});
+						
+						//Enable the save button
+						$('#save').removeAttr('disabled');
+					});
+				});
+				
+				//Under Linux, resizing only appears to work correctly after the window is visible
+				if (process.platform == 'linux') {
+					browserWindow.show();
+				}
+				
+				//Resize the window contents and make it visible
+				window.browserWindow.setContentSize(620, 600);
+				resizeScrollableArea();
+				browserWindow.center();
+				browserWindow.show();
+				
+				//Under Linux, some versions of Electron intermittently fail to resize the first time
+				if (process.platform == 'linux') {
+					setTimeout(function(){ resizeScrollableArea(); }, 1000);
+				}
+			}
+			
+			$(document).ready(function() {
+				$('#invocation').text(remote.process.argv[0] + ' <ROUNDNUM>');
+			});
+			
+		</script>
+	</head>
+	<body>
+		
+		<div id="outerWrapper">
+			
+			<h1>Note for advanced users</h1>
+			
+			<p>If you want to create more complex schedules using the operating system's own scheduling mechanisms, the command to invoke for running a given round is:</p>
+			
+			<p><code id="invocation"></code></p>
+			
+			<div id="scheduleContainer">
+				<p>Checking for existing schedule...</p>
+			</div>
+			
+		</div>
+		
+		<div id="buttons">
+			<button id="save" disabled="disabled">Save</button>
+			<button id="cancel">Cancel</button>
+		</div>
+		
+	</body>
+</html>

@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Select a backup round to run</title>
+		
+		<link rel="stylesheet" type="text/css" href="./css/fonts.css">
+		<link rel="stylesheet" type="text/css" href="./css/common.css">
+		<style type="text/css">
+			
+			button {
+				box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+			}
+			
+			#backgroundImage
+			{
+				background-image: url(./images/background.jpg);
+				background-position: center center;
+				background-size: cover;
+				position:  fixed;
+				padding:   4em;
+				top:       -2em;
+				left:      -2em;
+				width:     100%;
+				height:    100%;
+				z-index:   -1;
+				-webkit-filter: blur(3px);
+			}
+			
+			#rounds, #buttons
+			{
+				padding: 1em;
+			}
+			
+			.round
+			{
+				background-color: rgba(255,255,255,0.75);
+				padding: 1em;
+			}
+			
+			.round:hover {
+				background-color: rgba(255,255,255,1);
+			}
+			
+			.round + .round {
+				margin-top: 1em;
+			}
+			
+			.round p {
+				margin: 0;
+			}
+			
+			.round .name
+			{
+				font-weight: 600;
+				font-size: 1.2em;
+				padding-bottom: 0.5em;
+			}
+			
+			.round .description
+			{
+				font-size: 0.9em;
+				padding-top: 0;
+				color: #444;
+			}
+			
+			#cancel {
+				float: right;
+			}
+			
+			#clear
+			{
+				clear:  both;
+				width:  0;
+				height: 0;
+			}
+			
+		</style>
+		
+		<script type="text/javascript">
+			
+			var $ = require('jquery');
+			var ipc = require('ipc');
+			
+			//Resizes the window to fit its contents
+			function resizeWindow()
+			{
+				if (window.browserWindow !== undefined) {
+					window.browserWindow.setContentSize(520, $('#outerWrapper').outerHeight());
+				}
+			}
+			
+			$(document).ready(function()
+			{
+				//Grab a reference to the current browser window
+				var remote = require('remote');
+				window.browserWindow = remote.getCurrentWindow();
+				
+				//Retrieve the current config data
+				var config = ipc.sendSync('get-config', '');
+				
+				//Create the divs for each of the rounds
+				config.rounds.forEach(function(round, index)
+				{
+					if (round.items.length > 0)
+					{
+						var roundDiv = $(document.createElement('div')).attr('class', 'round');
+						roundDiv.append($(document.createElement('p')).attr('class', 'name').text(round.name));
+						roundDiv.append($(document.createElement('p')).attr('class', 'description').text(round.description));
+						$('#rounds').append(roundDiv);
+						roundDiv.click(function() {
+							ipc.send('show-round', index);
+						});
+					}
+				});
+				
+				//Wire up the event listeners for the static buttons
+				$('#config').click(function(){ ipc.send('show-config', ''); });
+				$('#cancel').click(function(){ browserWindow.close(); });
+				
+				//Under Linux, resizing only appears to work correctly after the window is visible
+				if (process.platform == 'linux') {
+					browserWindow.show();
+				}
+				
+				//Resize the window and make it visible
+				resizeWindow();
+				browserWindow.center();
+				browserWindow.show();
+				
+				//Under some system configurations it's necessary to resize again after the first frame is rendered
+				requestAnimationFrame(function() {
+					resizeWindow();
+				});
+			});
+			
+		</script>
+	</head>
+	<body>
+		
+		<div id="backgroundImage"></div>
+		<div id="outerWrapper">
+			
+			<div id="rounds"></div>
+			
+			<div id="buttons">
+				<button id="config">Configuration</button>
+				<button id="cancel">Cancel</button>
+			</div>
+			
+			<div id="clear"></div>
+			
+		</div>
+		
+	</body>
+</html>

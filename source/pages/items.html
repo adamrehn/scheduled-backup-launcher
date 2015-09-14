@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Run Backup Round</title>
+		
+		<link rel="stylesheet" type="text/css" href="./css/common.css">
+		<style type="text/css">
+			
+			html, body {
+				margin: 0;
+			}
+			
+			body {
+				background-color: #f0f0f0;
+			}
+			
+			#outerWrapper, #buttons
+			{
+				padding: 1em;
+				position: relative;
+			}
+			
+			h1
+			{
+				margin: 0;
+				font-weight: 600;
+				font-size: 1.2em;
+			}
+			
+			h1 + p
+			{
+				margin-top:    0.75em;
+				margin-bottom: 1.5em;
+			}
+			
+			#items
+			{
+				background-color: #fff;
+				border: 1px solid #ccc;
+				margin-top: 1em;
+				height: 17em;
+				max-height: 17em;
+				overflow-y: auto;
+			}
+			
+			#items ul, #items ul li
+			{
+				list-style-type: none;
+				padding: 0;
+				margin: 0;
+			}
+			
+			#items ul li {
+				padding: 0 0.5em;
+			}
+			
+			#items ul li:first-child {
+				padding-top: 0.25em;
+			}
+			
+			#items ul li:last-child {
+				padding-bottom: 0.25em;
+			}
+			
+			#items ul li label
+			{
+				display: block;
+				padding-top: 0.5em;
+				padding-bottom: 0.5em;
+			}
+			
+			#buttons, #countdown {
+				margin-top: 1.5em;
+			}
+			
+			#buttons
+			{
+				position: absolute;
+				bottom: 0;
+				right: 0;
+			}
+			
+			#countdown p {
+				margin: 0;
+			}
+			
+			#timeRemaining {
+				font-weight: bold;
+			}
+			
+			button {
+				margin-left: 0.5em;
+			}
+			
+			#clear
+			{
+				clear:  both;
+				width:  0;
+				height: 0;
+			}
+			
+		</style>
+		
+		<script type="text/javascript">
+			
+			var Countdown = require('../Countdown.js');
+			var $ = require('jquery');
+			var ipc = require('ipc');
+			
+			function quitWithDialog(message)
+			{
+				var remote = require('remote');
+				var dialog = remote.require('dialog');
+				dialog.showErrorBox('Error', message);
+				
+				var app = remote.require('app');
+				app.quit();
+			}
+			
+			ipc.on('load-items', function(arg)
+			{
+				//Grab a reference to the current browser window
+				var remote = require('remote');
+				var browserWindow = remote.getCurrentWindow();
+				
+				//Retrieve the current config data
+				var config = ipc.sendSync('get-config', '');
+				
+				//Verify that the requested round index is valid
+				var requestedRound = arg;
+				if (requestedRound >= config.rounds.length) {
+					quitWithDialog('Invalid backup round requested.');
+				}
+				else if (config.rounds[requestedRound].items.length == 0) {
+					quitWithDialog('The requested backup round contains no backup items.');
+				}
+				else
+				{
+					//Load the items for the current round
+					$('#roundName').text(config.rounds[requestedRound].name);
+					config.rounds[requestedRound].items.forEach(function(item, index)
+					{
+						var listItem = $(document.createElement('li'));
+						var label    = $(document.createElement('label'));
+						var checkbox = $(document.createElement('input')).attr('type', 'checkbox').attr('index', index);
+						if (item.default == true) {
+							checkbox.attr('checked', 'checked');
+						}
+						
+						label.append(checkbox);
+						label.append(document.createTextNode(item.name));
+						
+						listItem.append(label);
+						$('#items > ul').append(listItem);
+					});
+					
+					//Wire up the event listeners for the static buttons
+					$('#run').click(function()   { window.countdown.forceEnd(); });
+					$('#delay').click(function() { window.countdown.delay(60);  });
+					$('#cancel').click(function(){ browserWindow.close();       });
+					
+					//Under Linux, resizing only appears to work correctly after the window is visible
+					if (process.platform == 'linux') {
+						browserWindow.show();
+					}
+					
+					//Resize the window and make it visible
+					browserWindow.setContentSize(520, $('#outerWrapper').outerHeight());
+					browserWindow.center();
+					browserWindow.show();
+					
+					//Start the timer for the countdown
+					window.countdown = new Countdown(60);
+					setInterval(function() { window.countdown.tick(); }, 1000);
+					window.countdown.onTick(function(remaining) { $('#timeRemaining').text(remaining); });
+					window.countdown.onComplete(function()
+					{
+						//Retrieve the list of checked items
+						var selectedItems = [];
+						$('input:checked').each(function(index, elem) {
+							selectedItems.push(parseInt( $(elem).attr('index') ));
+						});
+						
+						//Run the selected items (if any)
+						ipc.send('run-items', {
+							'round': requestedRound,
+							'items': selectedItems
+						});
+					});
+				}
+			});
+			
+		</script>
+	</head>
+	<body>
+		
+		<div id="outerWrapper">
+			<h1 id="roundName"></h1>
+			<p>The following backup items are about to be run:</p>
+			
+			<div id="items"><ul></ul></div>
+			
+			<div id="buttons">
+				<button id="run">Run now</button>
+				<button id="delay">Delay 60 seconds</button>
+				<button id="cancel">Cancel</button>
+			</div>
+			
+			<div id="countdown">
+				<p>Selected items run in:</p>
+				<p><span id="timeRemaining">60</span> seconds</p>
+			</div>
+			
+			<div id="clear"></div>
+		</div>
+		
+	</body>
+</html>

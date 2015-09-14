@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+	<head>
+		<title>About</title>
+		
+		<link rel="stylesheet" type="text/css" href="./css/common.css">
+		<link rel="stylesheet" type="text/css" href="./css/config.css">
+		<style type="text/css">
+			
+			body {
+				overflow: auto !important;
+			}
+			
+			#outerWrapper {
+				overflow-y: visible;
+			}
+			
+			#appDetails
+			{
+				text-align:    center;
+				padding:       0.25em;
+				margin-bottom: 2em;
+			}
+			
+			#appDetails #appIcon
+			{
+				display:       block;
+				max-width:     5em;
+				max-height:    5em;
+				margin:        0 auto;
+				margin-bottom: 1em;
+			}
+			
+			#appDetails h1, #appDetails p
+			{
+				margin:        0;
+				line-height:   1em;
+				margin-bottom: 0.75em;
+			}
+			
+			h1#legal {
+				margin-bottom: 0.5em;
+			}
+			
+			h2
+			{
+				font-size:     1.1em;
+				margin:        0;
+				margin-bottom: 0.5em;
+				margin-top:    3em;
+			}
+			
+			h1#legal + p, h2 + p {
+				margin-top: 0;
+			}
+			
+			pre {
+				font-size: 1.2em;
+			}
+			
+		</style>
+		
+		<script type="text/javascript">
+			
+			var fs = require('fs');
+			var $ = require('jquery');
+			var shell = require('shell');
+			
+			$(document).ready(function()
+			{
+				//Redirect hyperlinks to open in the user's default browser
+				$('a').click(function(e)
+				{
+					shell.openExternal( $(e.target).attr('href') );
+					e.preventDefault();
+					return false;
+				});
+				
+				//Fill in the version numbers
+				var appDetails = JSON.parse(fs.readFileSync(__dirname + '/../package.json'));
+				$('#appVer').text( appDetails['version'] );
+				$('#electronVer').text( process.versions['electron'] );
+				
+				//Load the license files
+				$('#licenseElectron').text( fs.readFileSync(__dirname + '/../licenses/electron.txt') );
+				$('#licenseOpenSans').text( fs.readFileSync(__dirname + '/../licenses/opensans.txt') );
+			});
+			
+		</script>
+	</head>
+	<body>
+		
+		<div id="outerWrapper">
+			
+			<div id="appDetails">
+				<img src="./images/icon.png" id="appIcon">
+				<h1>Scheduled Backup Launcher</h1>
+				<p>Version <strong id="appVer">&nbsp;</strong>, built with Electron version <strong id="electronVer">&nbsp;</strong></p>
+				<p>Copyright &copy; 2011 - 2015, Adam Rehn</p>
+			</div>
+			
+			<h1 id="legal">Legal Notices</h1>
+			
+			<p>This application makes use of the following third-party tools, fonts, and libraries:</p>
+			
+			<h2>Electron</h2>
+			<p><a href="http://electron.atom.io/">http://electron.atom.io/</a></p>
+			<pre id="licenseElectron"></pre>
+			
+			<h2>Open Sans</h2>
+			<p><a href="https://www.google.com/fonts/specimen/Open+Sans">https://www.google.com/fonts/specimen/Open+Sans</a></p>
+			<pre id="licenseOpenSans"></pre>
+			
+		</div>
+		
+	</body>
+</html>

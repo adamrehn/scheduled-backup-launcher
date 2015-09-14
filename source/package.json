@@ -1,0 +1,42 @@
+{
+	"name":        "scheduled-backup-launcher",
+	"description": "Scheduled Backup Launcher",
+	"homepage":    "https://github.com/adamrehn/scheduled-backup-launcher",
+	"main":        "main.js",
+	"version":     "1.0.0",
+	
+	"files": [
+		"main.js"
+	],
+	
+	"engines": {
+		"node": ">=0.10.0"
+	},
+	
+	"author": {
+		"name":  "Adam Rehn",
+		"email": "adam@adamrehn.com"
+	},
+	
+	"repository": {
+		"type": "git",
+		"url":  "https://github.com/adamrehn/scheduled-backup-launcher.git"
+	},
+	
+	"dependencies": {
+		"crontab":   "*",
+		"csv-parse": "*",
+		"glob":      "*",
+		"jquery":    "*",
+		"mkdirp":    "*",
+		"mod-op":    "*",
+		"promise":   "*",
+		"sleep":     "*",
+		"tmp":       "*",
+		"xml2js":    "*"
+	},
+	
+	"optionalDependencies": {
+		"node-windows": "*"
+	}
+}

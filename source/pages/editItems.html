@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Edit Backup Items for Round</title>
+		
+		<link rel="stylesheet" type="text/css" href="./css/common.css">
+		<link rel="stylesheet" type="text/css" href="./css/config.css">
+		<style type="text/css">
+			
+			p {
+				color: #444;
+			}
+			
+			p strong {
+				color: #000;
+			}
+			
+		</style>
+		
+		<script type="text/javascript" src="../FormBuilder.js"></script>
+		<script type="text/javascript">
+			
+			var remote = require('remote');
+			var BrowserWindow = remote.require('browser-window');
+			var $ = require('jquery');
+			var ipc = require('ipc');
+			
+			ipc.on('perform-setup', function(args) {
+				performSetup(args.id, args.items, args.tools, args.config);
+			});
+			
+			//Resizes the scrollable area of the window
+			function resizeScrollableArea() {
+				$('#outerWrapper').css('height', (window.browserWindow.getContentSize()[1] - $('#buttons').outerHeight()) + 'px');
+			}
+			
+			function performSetup(parentWindowId, items, tools, config)
+			{
+				//Grab a reference to the current browser window
+				window.browserWindow = remote.getCurrentWindow();
+				
+				//Grab a reference to the parent window
+				var parentWindow      = BrowserWindow.fromId(parentWindowId);
+				var parentWebContents = parentWindow.webContents;
+				
+				//Wire up the event listeners for the static buttons
+				$('#cancel').click(function(){ browserWindow.close(); });
+				$('#save').click(function()
+				{
+					parentWebContents.send('update-items', window.itemsForm.getValues());
+					browserWindow.close();
+				});
+				
+				//Build the items form table
+				window.itemsForm = FormBuilder.build($('#items'), {
+					'type':     {'type':'select',   'label':'Type', 'options':tools.map(function(tool) { return tool.name; }).concat(['Custom Command'])},
+					'name':     {'type':'text',     'label':'Name'},
+					'args':     {'type':'text',     'label':'Arguments'},
+					'terminal': {'type':'checkbox', 'label':'Terminal'},
+					'default':  {'type':'checkbox', 'label':'Default'}
+				}, items);
+				
+				//Under Linux, resizing only appears to work correctly after the window is visible
+				if (process.platform == 'linux') {
+					browserWindow.show();
+				}
+				
+				//Resize the window contents and make it visible
+				window.browserWindow.setContentSize(620, 600);
+				resizeScrollableArea();
+				browserWindow.center();
+				browserWindow.show();
+				
+				//Under Linux, some versions of Electron intermittently fail to resize the first time
+				if (process.platform == 'linux') {
+					setTimeout(function(){ resizeScrollableArea(); }, 1000);
+				}
+			}
+			
+		</script>
+	</head>
+	<body>
+		
+		<div id="outerWrapper">
+			
+			<h1>Notes about field meanings</h1>
+			
+			<p><strong>Arguments field:</strong><br>When <em>Custom Command</em> is selected as the type for a backup item, the <em>Arguments</em> field represents the custom command in its entirety. In all other cases, it represents additional arguments to be passed to the external tool being invoked.</p>
+			
+			<p><strong>Terminal field:</strong><br>When ticked, the command for the given backup item will be run in a visible terminal window (command prompt under Windows), instead of in the background, which is the default behaviour.</p>
+			
+			<p><strong>Default field:</strong><br>Determines if the given backup item is ticked by default when the containing backup round is viewed.</p>
+			
+			<table id="items"></table>
+			
+		</div>
+		
+		<div id="buttons">
+			<button id="save">Save</button>
+			<button id="cancel">Cancel</button>
+		</div>
+		
+	</body>
+</html>
