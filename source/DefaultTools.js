@@ -30,6 +30,7 @@ function DefaultTools()
 	this.tools = {};
 	this.detectRsync();
 	this.detectSyncBack();
+	this.detectWindowsBuiltins();
 }
 
 DefaultTools.prototype.getTools = function() {
@@ -86,12 +87,12 @@ DefaultTools.prototype.addToolIfInSupportedLocation = function(toolName, supppor
 //Tool-specific detection routines
 
 //Detects rsync <https://rsync.samba.org/>
-DefaultTools.prototype.detectRsync = function(tools) {
+DefaultTools.prototype.detectRsync = function() {
 	this.addToolIfInPath('rsync', 'rsync');
 }
 
 //Detects SyncBack <http://www.2brightsparks.com/syncback/>
-DefaultTools.prototype.detectSyncBack = function(tools)
+DefaultTools.prototype.detectSyncBack = function()
 {
 	if (process.platform == 'win32')
 	{
@@ -99,6 +100,14 @@ DefaultTools.prototype.detectSyncBack = function(tools)
 			'C:\\Program Files (x86)\\2BrightSparks\\SyncBack\\SyncBack.exe',
 			'C:\\Program Files\\2BrightSparks\\SyncBack\\SyncBack.exe'
 		], '-m');
+	}
+}
+
+//Detects if we are running under Windows, and adds the builtin Windows tools
+DefaultTools.prototype.detectWindowsBuiltins = function()
+{
+	if (process.platform == 'win32') {
+		this.addTool('Registry Export', 'REG', 'EXPORT');
 	}
 }
 
