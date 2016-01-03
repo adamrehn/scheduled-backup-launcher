@@ -3,7 +3,7 @@
 	"description": "Scheduled Backup Launcher",
 	"homepage":    "https://github.com/adamrehn/scheduled-backup-launcher",
 	"main":        "main.js",
-	"version":     "1.0.0",
+	"version":     "1.0.1",
 	
 	"files": [
 		"main.js"
