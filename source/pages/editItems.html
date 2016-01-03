@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
 	<head>
+		<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
 		<title>Edit Backup Items for Round</title>
 		
 		<link rel="stylesheet" type="text/css" href="./css/common.css">
@@ -58,7 +59,7 @@
 					'args':     {'type':'text',     'label':'Arguments'},
 					'terminal': {'type':'checkbox', 'label':'Terminal'},
 					'default':  {'type':'checkbox', 'label':'Default'}
-				}, items);
+				}, items, {'reorder':true});
 				
 				//Under Linux, resizing only appears to work correctly after the window is visible
 				if (process.platform == 'linux') {

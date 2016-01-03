@@ -30,10 +30,10 @@ FormBuilder.build = function(tableElem, fields, defaultValues, options)
 	this.options = ((options !== undefined) ? options : {});
 	
 	//Build the table header
-	FormBuilder.buildHeader(tableElem, fields);
+	FormBuilder.buildHeader(tableElem, fields, this.options.remButton, this.options.reorder);
 	
 	//Generate the row generation function
-	var rowGenFunc = FormBuilder.buildRowGenFunc(tableElem, fields, this.options.change, this.options.remButton);
+	var rowGenFunc = FormBuilder.buildRowGenFunc(tableElem, fields, this.options.change, this.options.remButton, this.options.reorder);
 	
 	//Build the table body
 	var tbody = $(document.createElement('tbody')).appendTo(tableElem);
@@ -82,7 +82,7 @@ FormBuilder.tableHideHelper = function(tableElem)
 }
 
 //Builds the table header
-FormBuilder.buildHeader = function(tableElem, fields)
+FormBuilder.buildHeader = function(tableElem, fields, remButton, reorder)
 {
 	var thead = $(document.createElement('thead'));
 	var tr    = $(document.createElement('tr'));
@@ -93,14 +93,22 @@ FormBuilder.buildHeader = function(tableElem, fields)
 		tr.append(th);
 	});
 	
-	//Create an empty header cell for the row deletion button
-	tr.append($(document.createElement('th')));
+	//Create an empty header cell for the row deletion button, if requested
+	if (remButton === undefined || remButton != false) {
+		tr.append($(document.createElement('th')));
+	}
+	
+	//Create an empty header cell for the reordering buttons, if requested
+	if (reorder === true) {
+		tr.append($(document.createElement('th')));
+	}
+	
 	thead.append(tr);
 	tableElem.append(thead);
 }
 
 //Builds the row generation function
-FormBuilder.buildRowGenFunc = function(tableElem, fields, rowChangeHandler, remButton)
+FormBuilder.buildRowGenFunc = function(tableElem, fields, rowChangeHandler, remButton, reorder)
 {
 	return function(values)
 	{
@@ -222,6 +230,42 @@ FormBuilder.buildRowGenFunc = function(tableElem, fields, rowChangeHandler, remB
 			});
 		}
 		
+		//If requested, build the table cell for the up and down buttons
+		if (reorder === true)
+		{
+			var upButton   = $(document.createElement('button')).text('↑').attr('class', 'reorder');
+			var downButton = $(document.createElement('button')).text('↓').attr('class', 'reorder');
+			tr.append($(document.createElement('td')).append(upButton).append(downButton));
+			
+			upButton.click(function()
+			{
+				//Swap the current row with the previous one
+				var sibling = tr.prev();
+				if (sibling.length > 0) {
+					sibling.before(tr);
+				}
+				
+				//If a row change handler was supplied, invoke it
+				if (rowChangeHandler !== undefined) {
+					rowChangeHandler();
+				}
+			});
+			
+			downButton.click(function()
+			{
+				//Swap the current row with the next one
+				var sibling = tr.next();
+				if (sibling.length > 0) {
+					sibling.after(tr);
+				}
+				
+				//If a row change handler was supplied, invoke it
+				if (rowChangeHandler !== undefined) {
+					rowChangeHandler();
+				}
+			});
+		}
+		
 		return tr;
 	};
 }
@@ -232,12 +276,17 @@ FormBuilder.getValues = function(tableElem, fields)
 	var values = [];
 	var fieldNames = Object.keys(fields);
 	
+	//Determine the number of extra columns, based on which options are active
+	var extraRows = 0;
+	if (this.options.remButton === undefined || this.options.remButton != false) { extraRows++; }
+	if (this.options.reorder === true) { extraRows++; }
+	
 	//Iterate over each table row
 	tableElem.find('> tbody > tr').each(function(index, row)
 	{
 		//Verify that the number of cells matches our fields (plus one for the remove button, if we're using it)
 		var cells = $(row).find('> td');
-		if (cells.length == fieldNames.length + ((that.options.remButton === undefined || that.options.remButton != false) ? 1 : 0))
+		if (cells.length == fieldNames.length + extraRows)
 		{
 			var rowVals = {};
 			
