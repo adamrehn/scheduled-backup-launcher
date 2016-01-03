@@ -15,10 +15,10 @@
 		<script type="text/javascript" src="../FormBuilder.js"></script>
 		<script type="text/javascript">
 			
-			var remote = require('remote');
-			var BrowserWindow = remote.require('browser-window');
+			var remote = require('electron').remote;
+			var BrowserWindow = remote.require('electron').BrowserWindow;
 			var $ = require('jquery');
-			var ipc = require('ipc');
+			var ipc = require('electron').ipcRenderer;
 			var ipcTargetButton = null;
 			
 			//Creates a child browser window, for displaying in place of this one
@@ -45,7 +45,7 @@
 				window.browserWindow.webContents.once('did-finish-load', resizeScrollableArea);
 				
 				//Register our IPC event handler
-				ipc.on('update-items', function(arg)
+				ipc.on('update-items', function(event, arg)
 				{
 					//If a target button has been specified, set its value
 					if (ipcTargetButton !== null) {
@@ -69,7 +69,7 @@
 					
 					//Create a new browser window to display the schedule editor
 					var scheduleWindow = createChildWindow();
-					scheduleWindow.loadUrl('file://' + __dirname + '/schedule.html');
+					scheduleWindow.loadURL('file://' + __dirname + '/schedule.html');
 					scheduleWindow.on('closed', function()
 					{
 						scheduleWindow = null;
@@ -95,7 +95,7 @@
 						'title':      'About'
 					});
 					
-					aboutWindow.loadUrl('file://' + __dirname + '/about.html');
+					aboutWindow.loadURL('file://' + __dirname + '/about.html');
 					aboutWindow.center();
 					aboutWindow.show();
 				});
@@ -141,7 +141,7 @@
 							
 							//Create a new browser window to display the item editor
 							var itemWindow = createChildWindow();
-							itemWindow.loadUrl('file://' + __dirname + '/editItems.html');
+							itemWindow.loadURL('file://' + __dirname + '/editItems.html');
 							itemWindow.on('closed', function()
 							{
 								itemWindow = null;

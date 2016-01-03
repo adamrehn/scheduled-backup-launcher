@@ -22,9 +22,9 @@
 */
 var ConfigurationManager = require('./ConfigurationManager.js');
 var BackupItemRunner     = require('./BackupItemRunner.js');
-var app                  = require('app');
-var BrowserWindow        = require('browser-window');
-var ipc                  = require('ipc');
+var app                  = require('electron').app;
+var BrowserWindow        = require('electron').BrowserWindow;
+var ipc                  = require('electron').ipcMain;
 var path                 = require('path');
 
 //Maintain a reference to the main window to prevent it being freed prematurely
@@ -44,7 +44,7 @@ function loadPage(mainWindow, page)
 	if (mainWindow !== null)
 	{
 		mainWindow.hide();
-		mainWindow.loadUrl('file://' + __dirname + '/pages/' + page + '.html');
+		mainWindow.loadURL('file://' + __dirname + '/pages/' + page + '.html');
 	}
 }
 

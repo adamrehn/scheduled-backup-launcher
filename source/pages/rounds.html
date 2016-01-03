@@ -79,7 +79,7 @@
 		<script type="text/javascript">
 			
 			var $ = require('jquery');
-			var ipc = require('ipc');
+			var ipc = require('electron').ipcRenderer;
 			
 			//Resizes the window to fit its contents
 			function resizeWindow()
@@ -92,7 +92,7 @@
 			$(document).ready(function()
 			{
 				//Grab a reference to the current browser window
-				var remote = require('remote');
+				var remote = require('electron').remote;
 				window.browserWindow = remote.getCurrentWindow();
 				
 				//Retrieve the current config data

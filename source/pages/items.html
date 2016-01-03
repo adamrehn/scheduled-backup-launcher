@@ -105,22 +105,22 @@
 			
 			var Countdown = require('../Countdown.js');
 			var $ = require('jquery');
-			var ipc = require('ipc');
+			var ipc = require('electron').ipcRenderer;
 			
 			function quitWithDialog(message)
 			{
-				var remote = require('remote');
-				var dialog = remote.require('dialog');
+				var remote = require('electron').remote;
+				var dialog = remote.require('electron').dialog;
 				dialog.showErrorBox('Error', message);
 				
-				var app = remote.require('app');
+				var app = remote.require('electron').app;
 				app.quit();
 			}
 			
-			ipc.on('load-items', function(arg)
+			ipc.on('load-items', function(event, arg)
 			{
 				//Grab a reference to the current browser window
-				var remote = require('remote');
+				var remote = require('electron').remote;
 				var browserWindow = remote.getCurrentWindow();
 				
 				//Retrieve the current config data

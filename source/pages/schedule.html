@@ -50,12 +50,12 @@
 			
 			var Utility = require('../Utility.js');
 			var TaskSchedulerFactory = require('../TaskSchedulerFactory.js');
-			var remote = require('remote');
-			var BrowserWindow = remote.require('browser-window');
+			var remote = require('electron').remote;
+			var BrowserWindow = remote.require('electron').BrowserWindow;
 			var $ = require('jquery');
-			var ipc = require('ipc');
+			var ipc = require('electron').ipcRenderer;
 			
-			ipc.on('perform-setup', function(args) {
+			ipc.on('perform-setup', function(event, args) {
 				performSetup(args.rounds);
 			});
 			
