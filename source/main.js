@@ -26,7 +26,7 @@ var app                  = require('electron').app;
 var BrowserWindow        = require('electron').BrowserWindow;
 var ipc                  = require('electron').ipcMain;
 var path                 = require('path');
-var appIcon              = __dirname + '/pages/images/icon.png';
+var appIcon              = (process.platform == 'win32') ? null : __dirname + '/pages/images/icon.png';
 
 //Maintain a reference to the main window to prevent it being freed prematurely
 var mainWindow = null;
