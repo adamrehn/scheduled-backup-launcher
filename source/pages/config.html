@@ -29,7 +29,8 @@
 					'height':     1,
 					'show':       false,
 					'fullscreen': false,
-					'resizable':  false
+					'resizable':  false,
+					'icon':       remote.appIcon
 				});
 			}
 			
@@ -92,7 +93,8 @@
 						'show':       false,
 						'fullscreen': false,
 						'resizable':  true,
-						'title':      'About'
+						'title':      'About',
+						'icon':       remote.appIcon
 					});
 					
 					aboutWindow.loadURL('file://' + __dirname + '/about.html');

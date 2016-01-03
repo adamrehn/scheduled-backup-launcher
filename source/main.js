@@ -26,6 +26,7 @@ var app                  = require('electron').app;
 var BrowserWindow        = require('electron').BrowserWindow;
 var ipc                  = require('electron').ipcMain;
 var path                 = require('path');
+var appIcon              = __dirname + '/pages/images/icon.png';
 
 //Maintain a reference to the main window to prevent it being freed prematurely
 var mainWindow = null;
@@ -140,17 +141,16 @@ app.on('ready', function()
 	
 	//Create the main browser window
 	mainWindow = new BrowserWindow({
-		'width':            520,
-		'height':           1,
-		'center':           true,
-		'show':             false,
-		'resizable':        false,
-		'fullscreen':       false,
-		'use-content-size': true,
-		'web-preferences': {
-			'direct-write':          true,
-			'subpixel-font-scaling': true,
-			'overlay-scrollbars':    false
+		'width':          520,
+		'height':         1,
+		'center':         true,
+		'show':           false,
+		'resizable':      false,
+		'fullscreen':     false,
+		'useContentSize': true,
+		'icon':           appIcon,
+		'webPreferences': {
+			'overlayScrollbars': false
 		}
 	});
 	
