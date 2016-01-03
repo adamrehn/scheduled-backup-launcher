@@ -127,9 +127,11 @@
 				browserWindow.center();
 				browserWindow.show();
 				
-				//Under some system configurations it's necessary to resize again after the first frame is rendered
-				requestAnimationFrame(function() {
+				//Under some system configurations it's necessary to resize again after the first frame or two are rendered
+				requestAnimationFrame(function()
+				{
 					resizeWindow();
+					requestAnimationFrame(resizeWindow);
 				});
 			});
 			
