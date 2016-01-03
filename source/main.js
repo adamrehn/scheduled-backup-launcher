@@ -78,6 +78,10 @@ function showRound(roundIndex)
 app.on('ready', function()
 {
 	//Register our IPC responders
+	ipc.on('get-app-icon', function(event, arg) {
+		event.returnValue = appIcon;
+	});
+	
 	ipc.on('show-config', function(event, arg)
 	{
 		//Open the config window
