@@ -21,7 +21,7 @@
 //  SOFTWARE.
 */
 var EventEmitter = require('events').EventEmitter;
-var elevate      = require('../node-windows').elevate;
+var elevate      = require('node-windows').elevate;
 var parseXml     = require('xml2js').parseString;
 var exec         = require('child_process').exec;
 var parseCsv     = require('csv-parse');
